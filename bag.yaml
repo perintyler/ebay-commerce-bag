@@ -1,8 +1,26 @@
 version: v0.1
 name: ebay-commerce
 description: >-
-  Selling on eBay through the Sell APIs — verified contract facts, the sandbox
-  validation runbook, and MCP tooling references.
+  Selling on eBay through the Sell APIs — verified contract facts, read-only
+  order and listing tools, the sandbox validation runbook, and MCP references.
+
+tools:
+  entry: tools.ts
+  env:
+    - EBAY_CLIENT_ID
+    - EBAY_CERT_ID
+    - EBAY_REFRESH_TOKEN
+
+# The namespace (`ebay`) differs from the bag name (`ebay-commerce`), and
+# namespace derivation falls back to the BAG NAME when introspection of the
+# built bundle yields nothing (auto-traits.ts, ownNamespaces). Without this
+# block a missing or stale build would grant `ebay-commerce` and every tool
+# would silently be invisible. Declared, it is deterministic.
+tool-metadata:
+  - { toolName: status, namespace: ebay, access: read }
+  - { toolName: get_orders, namespace: ebay, access: read }
+  - { toolName: get_listing, namespace: ebay, access: read }
+  - { toolName: get_oos_control, namespace: ebay, access: read }
 
 dependencies:
   - name: npm
