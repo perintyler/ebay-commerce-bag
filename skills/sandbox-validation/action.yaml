@@ -83,12 +83,21 @@ prompt: |-
 
   ## Alternative harness: drive spikes via MCP
 
-  The official eBay MCP server can drive these same calls as tools
-  (`@ebay/npm-public-api-mcp` — see the `ebay-mcp-setup` action). Useful when
-  iterating: discover the operation, call it against sandbox with the minted
-  token, read the raw response. Whichever harness settles a verdict, leave
-  behind something replayable so the answer can be re-checked when eBay changes
-  the endpoint.
+  An MCP server can drive these calls as tools instead of scripts — but pick
+  carefully. **eBay's own `@ebay/npm-public-api-mcp` cannot run these spikes**:
+  its README states it does not support the sandbox environment, and that in
+  production only GET requests work. S1–S3 are writes against sandbox, so it is
+  disqualified on both counts.
+
+  The community `YosefHayim/ebay-mcp` does support sandbox
+  (`EBAY_ENVIRONMENT=sandbox`) and writes — see the `ebay-mcp-setup` action,
+  and read its cautions first: it is unofficial code whose mutating tools can
+  end listings.
+
+  A plain script against the documented endpoint remains the most direct
+  option, and avoids attributing an intermediary's bug to eBay. Whichever
+  harness settles a verdict, leave behind something replayable so the answer
+  can be re-checked when eBay changes the endpoint.
 
   ## Deletion endpoint handshake
 

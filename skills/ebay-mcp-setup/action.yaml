@@ -7,10 +7,22 @@ prompt: |-
   Two servers, different fits. Full survey: the `ebay-mcp-and-tooling`
   instruction.
 
-  ## Official — `@ebay/npm-public-api-mcp` (prefer for validation work)
+  ## Read this before choosing
 
-  OpenAPI-driven discovery + docs + live calls with your own OAuth token.
-  Local stdio; Apache-2.0; published under eBay's official npm scope.
+  Provenance and capability point in opposite directions here. The official
+  server is **read-only in production and does not support sandbox** (both
+  stated in its own README), so it cannot run a write spike or touch sandbox
+  at all. The community server does both — and is unvetted third-party code
+  that can end listings.
+
+  | | Official `@ebay/...` | Community `YosefHayim/ebay-mcp` |
+  |---|---|---|
+  | Sandbox | **No** | Yes (`EBAY_ENVIRONMENT`) |
+  | Writes | **No** (GET only in prod) | Yes |
+  | Tools | 2 generic (query + call) | ~299 per-endpoint (claimed) |
+  | Trust | eBay's own npm scope | Unofficial, MIT, as-is |
+
+  ## Official — `@ebay/npm-public-api-mcp` (read-only production discovery)
 
   ```sh
   npm i -g @ebay/npm-public-api-mcp
@@ -18,32 +30,38 @@ prompt: |-
   claude mcp add ebay-api -- npx @ebay/npm-public-api-mcp
   ```
 
-  Auth: it makes live calls with a token you supply — mint a sandbox user
-  token first via the authorization-code flow (the official
-  `ebay-oauth-nodejs-client` does this). Check the package README for the exact
-  env var / config key the installed version expects; it changes between
-  minors.
+  Two tools: `query_ebay_api` (natural-language search over eBay's OpenAPI
+  specs) and `call_ebay_api` (executes a call), plus an `interpret_user_request`
+  prompt. Auth: `EBAY_CLIENT_ID` + `EBAY_CLIENT_SECRET`, with `EBAY_TOKEN_TYPE`
+  (`application` | `user`) and `EBAY_REFRESH_TOKEN` for user mode. Confirm the
+  env-var names against the installed version's README — they have changed
+  between releases.
 
-  ## Community — `YosefHayim/ebay-mcp` (broad Sell-API tool coverage)
-
-  299 tools over Inventory/Fulfillment/Trading/Marketing/Analytics (no
-  Feed/LMS). OAuth with auto-refresh built in; `EBAY_ENVIRONMENT` switches
-  sandbox/production; `npm run setup` auto-configures Claude Code
-  (`~/.claude.json`).
+  ## Community — `YosefHayim/ebay-mcp` (sandbox + writes)
 
   ```sh
   git clone https://github.com/YosefHayim/ebay-mcp && cd ebay-mcp
   npm install && npm run setup   # wizard: keyset, OAuth browser flow, client config
   ```
 
-  Cautions: unofficial (not affiliated with eBay); mutating tools can alter
-  live seller data — keep `EBAY_ENVIRONMENT=SANDBOX` unless production is the
-  explicit goal; review the tool gating options in its README before
+  OAuth with auto-refresh; `EBAY_ENVIRONMENT` switches sandbox/production;
+  `npm run setup` auto-configures Claude Code (`~/.claude.json`).
+
+  Cautions: unofficial and unaffiliated with eBay; its mutating tools can
+  create, revise, refund or **end** records, and ending a listing is
+  destructive (relist loses history, watchers and ranking). Keep
+  `EBAY_ENVIRONMENT=sandbox` unless production is the deliberate, reviewed
+  goal, and review its tool-gating options before ever pointing it at
   production keys.
 
   ## Which to pick
 
-  - Settling API-contract questions (the S1–S5 spikes): **official** — its
-    discovery surface maps directly onto "what does this endpoint really do".
-  - Operating a seller account through tools (orders, offers, campaigns):
-    **community**, sandbox first, after vetting.
+  - **Running the S1–S5 sandbox spikes**: the community server, in sandbox —
+    it is the only one of the two that can do it. The official server cannot
+    reach sandbox and cannot write.
+  - **Reading production data, or asking "what does this endpoint look like"**:
+    the official server. Read-only is a feature here.
+  - **Neither, if the answer must be authoritative**: a short script against
+    the documented endpoint settles a contract question without trusting an
+    intermediary's tool mapping. The spikes' value is a recorded verdict, not
+    a convenient harness.
