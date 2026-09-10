@@ -1,0 +1,101 @@
+version: 1
+name: sandbox-validation
+description: "Run the eBay S1–S5 sandbox spikes that prove a Sell-API integration's contracts before live rollout — the write-path question (bulkUpdatePriceQuantity vs unmigrated listings), the Trading fallback, Out-of-Stock Control, the LMS active-inventory report, and the order-poll shape — plus the deletion-endpoint handshake. TRIGGER when: a sandbox keyset becomes available and the validation gate needs closing; the user asks to run/validate the eBay spikes, S1–S5, the deletion endpoint, or \"prove the eBay contracts against sandbox\". SKIP for: production canary work against a real seller account, and for building new eBay features."
+instructions: [ebay-api-domain-facts]
+prompt: |-
+  # eBay sandbox validation (S1–S5 + deletion endpoint)
+
+  An eBay integration can be mocked-suite green and still unproven against the
+  real API. These five spikes settle the contracts that matter, in order of how
+  much they constrain the design. Record each verdict somewhere durable — the
+  point is a written answer you can cite later, not a green run.
+
+  ## Prerequisites (human, one-time)
+
+  Only the account owner can do these — do not attempt to automate:
+
+  1. eBay Developers Program account → application → **sandbox keyset**
+     (App ID + Cert ID).
+  2. A RuName (redirect) under the keyset's User Tokens page.
+  3. Two sandbox test users (seller + buyer).
+  4. A fixed-price listing created **through sandbox Seller Hub, not the API**
+     (S1's whole point is an unmigrated listing), with a custom SKU — ideally
+     also one multi-variation listing with per-variation SKUs.
+
+  ## Setup
+
+  Mint a sandbox user token for the seller test user — an authorization-code
+  grant against `api.sandbox.ebay.com`, exchanged for a refresh token. The
+  official `ebay-oauth-nodejs-client` does this, as does a short script of your
+  own; you need the App ID, Cert ID and RuName from the sandbox keyset.
+
+  ```sh
+  export EBAY_ENV=sandbox
+  export EBAY_CLIENT_ID='<sandbox App ID>'
+  export EBAY_CERT_ID='<sandbox Cert ID>'
+  export EBAY_RU_NAME='<RuName string>'
+  export EBAY_USER_REFRESH_TOKEN='<from the consent flow>'
+  ```
+
+  Whatever harness you use, keep each probe reproducible: the deliverable is a
+  recorded verdict, so a one-off curl you cannot re-run is worth less than a
+  script or a saved MCP call.
+
+  ## The spikes
+
+  Run in order — S1 is the gating question, and its answer decides whether the
+  write path needs routing at all.
+
+  **S1 — does `bulkUpdatePriceQuantity` reach an unmigrated listing?**
+  Call the Inventory API's `bulkUpdatePriceQuantity` with the SKU of a listing
+  created through sandbox Seller Hub. Expected: **no** — error **25710**, since
+  Trading-model listings are invisible to the Inventory API. A failure here is
+  what justifies routing every write by a per-listing model flag.
+
+  **S2 — does Trading `ReviseInventoryStatus` work as the fallback?**
+  Revise the same listing's quantity via the Trading XML API. Expected: yes.
+  Note the quantity semantics while you are there: `Quantity` is the TOTAL
+  listed, so leaving N available on a listing with S sold means writing N + S.
+  Record the per-call item limit you observe (documented as 4).
+
+  **S3 — Out-of-Stock Control.**
+  Read the preference via Trading `GetUserPreferences`, set it with
+  `SetUserPreferences`, then push quantity 0 to a GTC listing. Expected: with
+  the preference ON the listing is **hidden**, not ended — it keeps its history
+  and watchers. This is the check any quantity-0 push must be gated on, because
+  with the preference OFF the same write ENDS the listing destructively.
+
+  **S4 — does the LMS active-inventory report carry per-variation SKUs?**
+  Request `LMS_ACTIVE_INVENTORY_REPORT` through the Feed API and inspect a
+  multi-variation listing's rows for per-variation SKUs and titles. **This is
+  the one genuine unknown** — the documentation does not settle it, and the
+  answer decides whether the report can drive catalog enumeration on its own.
+
+  **S5 — order-poll shape.**
+  Call Fulfillment `getOrders` filtered by `lastmodifieddate`. Record: paging
+  behavior at `limit=1000`, which buyer PII fields arrive, currency
+  representation, and whether a stale order resurfaces through the filter (see
+  the `ebay-api-domain-facts` instruction — eBay bumps `lastModifiedDate` on
+  years-old orders, so poll consumers must be idempotent).
+
+  Write each verdict down under its own S-heading, including the ones that
+  confirmed expectations — "as documented" is a result worth citing later.
+
+  ## Alternative harness: drive spikes via MCP
+
+  The official eBay MCP server can drive these same calls as tools
+  (`@ebay/npm-public-api-mcp` — see the `ebay-mcp-setup` action). Useful when
+  iterating: discover the operation, call it against sandbox with the minted
+  token, read the raw response. Whichever harness settles a verdict, leave
+  behind something replayable so the answer can be re-checked when eBay changes
+  the endpoint.
+
+  ## Deletion endpoint handshake
+
+  After the spikes: register the deployed endpoint + verification token in the
+  developer portal and confirm eBay's GET challenge succeeds, then send the
+  portal's test notification and confirm it is verified, processed, and 200s.
+  The hash is `hex(sha256(challengeCode + verificationToken + endpointURL))`;
+  concatenation order matters and the URL must byte-match the registered one.
+  A failing endpoint starts a 30-day non-compliance clock after 24h of
+  failures, so wire the alert BEFORE registering.

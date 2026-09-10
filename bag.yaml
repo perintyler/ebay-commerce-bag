@@ -1,0 +1,10 @@
+version: v0.1
+name: ebay
+description: >-
+  eBay Sell-API integration knowledge — verified contract facts, the sandbox
+  validation runbook, and MCP tooling references.
+
+dependencies:
+  - name: npm
+    install: brew install node
+    reason: installs and runs the eBay MCP servers the ebay-mcp-setup action wires up

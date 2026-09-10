@@ -1,0 +1,49 @@
+version: 1
+name: ebay-mcp-setup
+description: "Wire an eBay MCP server into a session — the official @ebay/npm-public-api-mcp (API discovery/docs/live calls) or the community YosefHayim/ebay-mcp (299 Sell-API tools, sandbox mode). TRIGGER when: the user wants eBay API calls available as tools, asks to set up the eBay MCP, or sandbox spike work would benefit from interactive API calls instead of scripts. SKIP for: production seller operations with the community server unless the user has explicitly vetted it — it is unofficial."
+prompt: |-
+  # eBay MCP setup
+
+  Two servers, different fits. Full survey: the `ebay-mcp-and-tooling`
+  instruction.
+
+  ## Official — `@ebay/npm-public-api-mcp` (prefer for validation work)
+
+  OpenAPI-driven discovery + docs + live calls with your own OAuth token.
+  Local stdio; Apache-2.0; published under eBay's official npm scope.
+
+  ```sh
+  npm i -g @ebay/npm-public-api-mcp
+  # Claude Code:
+  claude mcp add ebay-api -- npx @ebay/npm-public-api-mcp
+  ```
+
+  Auth: it makes live calls with a token you supply — mint a sandbox user
+  token first via the authorization-code flow (the official
+  `ebay-oauth-nodejs-client` does this). Check the package README for the exact
+  env var / config key the installed version expects; it changes between
+  minors.
+
+  ## Community — `YosefHayim/ebay-mcp` (broad Sell-API tool coverage)
+
+  299 tools over Inventory/Fulfillment/Trading/Marketing/Analytics (no
+  Feed/LMS). OAuth with auto-refresh built in; `EBAY_ENVIRONMENT` switches
+  sandbox/production; `npm run setup` auto-configures Claude Code
+  (`~/.claude.json`).
+
+  ```sh
+  git clone https://github.com/YosefHayim/ebay-mcp && cd ebay-mcp
+  npm install && npm run setup   # wizard: keyset, OAuth browser flow, client config
+  ```
+
+  Cautions: unofficial (not affiliated with eBay); mutating tools can alter
+  live seller data — keep `EBAY_ENVIRONMENT=SANDBOX` unless production is the
+  explicit goal; review the tool gating options in its README before
+  production keys.
+
+  ## Which to pick
+
+  - Settling API-contract questions (the S1–S5 spikes): **official** — its
+    discovery surface maps directly onto "what does this endpoint really do".
+  - Operating a seller account through tools (orders, offers, campaigns):
+    **community**, sandbox first, after vetting.
