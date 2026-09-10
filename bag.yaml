@@ -1,7 +1,7 @@
 version: v0.1
-name: ebay
+name: ebay-commerce
 description: >-
-  eBay Sell-API integration knowledge — verified contract facts, the sandbox
+  Selling on eBay through the Sell APIs — verified contract facts, the sandbox
   validation runbook, and MCP tooling references.
 
 dependencies:

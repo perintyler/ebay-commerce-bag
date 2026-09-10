@@ -1,8 +1,10 @@
-# ebay bag
+# ebay-commerce bag
 
-eBay Sell-API integration knowledge — the contract facts that shape an
-inventory-and-orders integration, and the runbooks for proving them. No tools,
-servers, or credentials; prose and procedures.
+Selling on eBay through the Sell APIs — the contract facts that shape an
+inventory-and-orders integration, and the runbooks for proving them.
+
+Named for the domain rather than the vendor: this is seller-side integration
+engineering, not everything eBay.
 
 Everything reaches an agent through Barry's own primitives, so there is nothing
 to read out of this directory by hand:
