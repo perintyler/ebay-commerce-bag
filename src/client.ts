@@ -88,6 +88,37 @@ export function isNotFoundError(error: unknown): boolean {
 }
 
 /**
+ * Shape a getInventoryItem response into the model verdict callers route on.
+ *
+ * Exported and tested because this is the routing decision, not a formatting
+ * detail: `trading` means the Inventory API cannot address this SKU at all, and
+ * every later write has to go through the Trading API instead.
+ */
+export function shapeInventoryItem(sku: string, item: Record<string, any> | null) {
+  return {
+    sku,
+    model: "inventory" as ListingModel,
+    // The Inventory API is natively available-based, unlike Trading.
+    availableQuantity: optionalField(item?.availability?.shipToLocationAvailability?.quantity),
+    condition: optionalField(item?.condition),
+    title: optionalField(item?.product?.title),
+  };
+}
+
+/** The verdict for a SKU the Inventory API cannot see (error 25710). */
+export function tradingModelVerdict(sku: string) {
+  return {
+    sku,
+    model: "trading" as ListingModel,
+    availableQuantity: null,
+    note:
+      "Not addressable via the Inventory API (error 25710) — this SKU belongs to a " +
+      "Trading-model listing. Route reads and writes through the Trading API, where " +
+      "Quantity is the TOTAL listed and available = Quantity - QuantitySold.",
+  };
+}
+
+/**
  * Trading's `Quantity` is the TOTAL ever listed, not what a buyer can buy:
  *
  *     available = Quantity - QuantitySold

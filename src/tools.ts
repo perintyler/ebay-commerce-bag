@@ -19,8 +19,8 @@ import {
   parseOutOfStockControl,
   probeCredentials,
   requireClient,
-  tradingAvailableQuantity,
-  type ListingModel,
+  shapeInventoryItem,
+  tradingModelVerdict,
 } from "./client.js";
 
 export const status = defineTool({
@@ -123,28 +123,11 @@ export const getListing = defineTool({
     const client = requireClient(context);
     try {
       const item: any = await client.sell.inventory.getInventoryItem(sku);
-      const model: ListingModel = "inventory";
-      return {
-        sku,
-        model,
-        // The Inventory API is natively available-based — no conversion here.
-        availableQuantity: optionalField(item?.availability?.shipToLocationAvailability?.quantity),
-        condition: optionalField(item?.condition),
-        title: optionalField(item?.product?.title),
-      };
+      return shapeInventoryItem(sku, item);
     } catch (e) {
-      if (isNotFoundError(e)) {
-        const model: ListingModel = "trading";
-        return {
-          sku,
-          model,
-          availableQuantity: null,
-          note:
-            "Not addressable via the Inventory API (error 25710) — this SKU belongs to a " +
-            "Trading-model listing. Route reads and writes through the Trading API, where " +
-            "Quantity is the TOTAL listed and available = Quantity - QuantitySold.",
-        };
-      }
+      // 25710 is the answer, not a failure: this SKU is Trading-model. Any
+      // other error is a real one and must not be swallowed as a verdict.
+      if (isNotFoundError(e)) return tradingModelVerdict(sku);
       throw e;
     }
   },
