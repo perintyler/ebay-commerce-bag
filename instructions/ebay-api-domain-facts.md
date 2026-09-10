@@ -70,9 +70,22 @@ Therefore any quantity-0 push MUST be hard-gated on the preference being
 verified ON. Read/write it via the Trading `GetUserPreferences` /
 `SetUserPreferences` (`OutOfStockControlPreference`).
 
+**Gating breadth is a product decision, and stricter is defensible.** The
+minimum correct gate is qty-0-only. A deliberately broader choice — block
+*every* push until the preference reads ON — trades "sync works for most SKUs
+immediately" for "no destructive surprise later", and is the safer direction
+because ending a listing is irreversible (relist loses history, watchers and
+ranking) and because partial sync that silently stops at exactly the dangerous
+moment is harder for a merchant to reason about than a clear up-front blocker.
+Pair a broad gate with one-click enable (`SetUserPreferences`) so the blocker
+is one click to clear, not a dead end. Don't "fix" a broad gate down to
+qty-0-only without checking it was a considered choice.
+
 ## getOrders (Fulfillment API) polling
 
-- `limit` defaults to **50**, max **1000**. Use 1000 for polls.
+- `limit` defaults to **50**, max **1000**. Raise it off the default; the exact
+  page size is a tradeoff (fewer round trips vs. one large response), so a
+  mid-range value like 200 is a reasonable choice, not a bug.
 - No order-created webhook exists — orders are pulled, not pushed.
 - Filter by `lastmodifieddate:[start..end]`.
 - **Gotcha (community-confirmed):** eBay bumps `lastModifiedDate` on
