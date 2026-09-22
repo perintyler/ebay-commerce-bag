@@ -10,7 +10,7 @@
  * how every later write must be routed.
  */
 
-import { defineTool, type ToolContext } from "@barry-rocks/tools";
+import { defineTool, type ToolContext } from "@barry-rocks/sdk-bags";
 import { z } from "zod";
 import {
   EBAY_SECRETS,

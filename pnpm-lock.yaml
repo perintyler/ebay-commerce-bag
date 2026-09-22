@@ -8,9 +8,9 @@ importers:
 
   .:
     dependencies:
-      '@barry-rocks/tools':
-        specifier: link:../../barry/packages/tools
-        version: link:../../barry/packages/tools
+      '@barry-rocks/sdk-bags':
+        specifier: link:../../barry/sdk/bags
+        version: link:../../barry/sdk/bags
       ebay-api:
         specifier: 10.0.1
         version: 10.0.1
