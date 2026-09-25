@@ -7,7 +7,7 @@
  */
 
 import eBayApi from "ebay-api";
-import type { ToolContext } from "@barry-rocks/sdk-bags";
+import type { ToolContext } from "@barry-rocks/sdk/bags";
 
 export const EBAY_SECRETS = ["EBAY_CLIENT_ID", "EBAY_CERT_ID", "EBAY_REFRESH_TOKEN"];
 

@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "dependencies": {
-    "@barry-rocks/sdk-bags": "link:../../barry/sdk/bags",
+    "@barry-rocks/sdk": "link:../../barry/sdk/lib",
     "ebay-api": "10.0.1",
     "zod": "3.25.76"
   },
